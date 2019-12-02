@@ -1,4 +1,4 @@
-package com.example.searchforimages.interceptor
+package com.example.searchforimages.connection.interceptor
 
 import okhttp3.Interceptor
 import okhttp3.Response

@@ -2,22 +2,41 @@ package com.example.searchforimages.view_model
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.searchforimages.model.ImgurResponse
+import com.example.searchforimages.dagger.component.DaggerApplicationGraph
+import com.example.searchforimages.model.ImagePost
+import com.example.searchforimages.model.Response
+import com.example.searchforimages.repository.ImageRepository
+import com.example.searchforimages.utils.extension.isValidURL
+import io.reactivex.Maybe
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 class ViewModelSearchActivity : ViewModel() {
 
-    private val searchActivityStatus: MutableLiveData<SearchActivityStatus> = MutableLiveData()
+    val searchActivityStatus: MutableLiveData<SearchActivityStatus> = MutableLiveData()
     private val disposables: CompositeDisposable = CompositeDisposable()
     private lateinit var searchEmitter: PublishSubject<String>
+    var imageRepository: ImageRepository
+    private var currentPage = 0
 
     init {
+        imageRepository = DaggerApplicationGraph.builder().build().getImageRepository();
         initSearch()
+    }
+
+    fun search(query: String) {
+        //Todo
+//        if (searchQuery != query) {
+//            imagePostAdapter.items = ArrayList()
+//            imagePostAdapter.notifyDataSetChanged()
+//        }
+        searchEmitter.onNext(query)
     }
 
     private fun initSearch() {
@@ -31,14 +50,14 @@ class ViewModelSearchActivity : ViewModel() {
                         searchActivityStatus.postValue(SearchActivityStatus.tooShort())
                     }
                 }
-                .filter { it.length > 1 }
+                .filter { it.length > 2 }
                 .doOnNext { searchActivityStatus.postValue(SearchActivityStatus.loading()) }
                 .doOnTerminate { searchActivityStatus.postValue(SearchActivityStatus.complete()) }
                 .switchMap {
-                    searchForImages(it).toObservable()
+                    searchForImages(it)
                 }
                 .map {
-                    val newData = ImgurResponse(it.data?.filter { item ->
+                    val newData = Response(it.data?.filter { item ->
                         item.images?.isNotEmpty() == true && item.images.first().link.isValidURL()
                                 && item.nsfw == false
                                 && item.images.first().size ?: Long.MAX_VALUE <= 1500000L
@@ -55,6 +74,19 @@ class ViewModelSearchActivity : ViewModel() {
                         searchActivityStatus.postValue(SearchActivityStatus.error(it))
                     })
         )
+    }
+
+    private fun updateAdapter(data: List<ImagePost>?) {
+        TODO("not implemented")
+    }
+
+    fun loadMore(searchQuery: String) {
+        currentPage++
+        searchEmitter.onNext(searchQuery)
+    }
+
+    private fun searchForImages(query: String): Observable<Response>? {
+        return imageRepository.getImagePosts(currentPage, query).toObservable()
     }
 
 

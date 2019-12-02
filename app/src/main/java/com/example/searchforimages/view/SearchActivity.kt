@@ -1,11 +1,14 @@
 package com.example.searchforimages.view
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
+import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.searchforimages.R
 import com.example.searchforimages.utils.LoadMoreRecyclerViewListener
+import com.example.searchforimages.view_model.SearchActivityStatus
 import com.example.searchforimages.view_model.ViewModelSearchActivity
 import kotlinx.android.synthetic.main.activity_search.*
 
@@ -13,7 +16,6 @@ class SearchActivity : BaseActivity() {
 
     private lateinit var viewModelSearchActivity: ViewModelSearchActivity
     private lateinit var loadMoreRecyclerViewListener: LoadMoreRecyclerViewListener
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,10 +27,25 @@ class SearchActivity : BaseActivity() {
         intViewModel()
         initRecyclerView()
         initViewModelSubscriptions()
+        initSearchViews()
+    }
+
+    private fun initSearchViews() {
+        etSearch.addTextChangedListener {
+            viewModelSearchActivity.search(it.toString())
+        }
     }
 
     private fun initViewModelSubscriptions() {
-        //todo subscribe on view model loading state
+        viewModelSearchActivity.searchActivityStatus.observe(this, Observer {
+            it?.let {
+                updateSearchStatus(it)
+            }
+        })
+    }
+
+    private fun updateSearchStatus(searchActivityStatus: SearchActivityStatus) {
+        Toast.makeText(this, searchActivityStatus.status.name, Toast.LENGTH_LONG).show();
     }
 
     private fun initRecyclerView() {
@@ -38,7 +55,7 @@ class SearchActivity : BaseActivity() {
         recyclerImages.addOnScrollListener(object :
             LoadMoreRecyclerViewListener(linearLayoutManager) {
             override fun onLoadMore(currentPage: Int) {
-                //todo load more from view holder
+                viewModelSearchActivity.loadMore(etSearch.text.toString())
             }
         })
     }
