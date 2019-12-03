@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 abstract class LoadMoreRecyclerViewListener(private val layoutManager: LinearLayoutManager) :
     RecyclerView.OnScrollListener() {
 
-    private var loading = true //True if we are still waiting for data to load
+    private var loading = true
     private var currentPage = 1
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -17,7 +17,6 @@ abstract class LoadMoreRecyclerViewListener(private val layoutManager: LinearLay
         val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
 
         if (!loading && totalItemCount - visibleItemCount <= firstVisibleItem + VISIBLE_THRESHOLD) {
-            //End of list has been reached
             if (hasMore(totalItemCount)) {
                 loading = true
                 onLoadMore(++currentPage)
@@ -25,7 +24,7 @@ abstract class LoadMoreRecyclerViewListener(private val layoutManager: LinearLay
         }
     }
 
-    fun hasMore(totalItemCount: Int): Boolean {
+    private fun hasMore(totalItemCount: Int): Boolean {
         return true
     }
 
