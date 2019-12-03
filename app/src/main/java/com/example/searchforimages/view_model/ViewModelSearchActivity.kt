@@ -7,7 +7,7 @@ import com.example.searchforimages.model.ImagePost
 import com.example.searchforimages.model.Response
 import com.example.searchforimages.repository.ImageRepository
 import com.example.searchforimages.utils.extension.isValidURL
-import io.reactivex.Maybe
+import com.example.searchforimages.view.adapter.ImagePostAdapter
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -15,27 +15,24 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 class ViewModelSearchActivity : ViewModel() {
 
     val searchActivityStatus: MutableLiveData<SearchActivityStatus> = MutableLiveData()
     private val disposables: CompositeDisposable = CompositeDisposable()
     private lateinit var searchEmitter: PublishSubject<String>
-    var imageRepository: ImageRepository
-    private var currentPage = 0
+    var imageRepository: ImageRepository =
+        DaggerApplicationGraph.builder().build().getImageRepository()
+    private var currentPage: Int = 1
+    val adapter = ImagePostAdapter(emptyList())
 
     init {
-        imageRepository = DaggerApplicationGraph.builder().build().getImageRepository();
         initSearch()
     }
 
     fun search(query: String) {
-        //Todo
-//        if (searchQuery != query) {
-//            imagePostAdapter.items = ArrayList()
-//            imagePostAdapter.notifyDataSetChanged()
-//        }
+        currentPage = 1
+        adapter.resetItems()
         searchEmitter.onNext(query)
     }
 
@@ -44,7 +41,7 @@ class ViewModelSearchActivity : ViewModel() {
         addDisposable(
             searchEmitter
                 .subscribeOn(Schedulers.io())
-                .debounce(250, TimeUnit.MILLISECONDS)
+                .debounce(500, TimeUnit.MILLISECONDS)
                 .doOnNext {
                     if (it.length < 2) {
                         searchActivityStatus.postValue(SearchActivityStatus.tooShort())
@@ -71,21 +68,29 @@ class ViewModelSearchActivity : ViewModel() {
                 }
                 .subscribe({},
                     {
+                        initSearch()
                         searchActivityStatus.postValue(SearchActivityStatus.error(it))
                     })
         )
     }
 
-    private fun updateAdapter(data: List<ImagePost>?) {
-        TODO("not implemented")
+    private fun updateAdapter(items: List<ImagePost>?) {
+        items?.let {
+            if (adapter.getImagesList().isNullOrEmpty()) {
+                adapter.setImages(it)
+
+            } else {
+                adapter.addImages(it)
+            }
+        }
     }
 
-    fun loadMore(searchQuery: String) {
-        currentPage++
+    fun loadMore(searchQuery: String, currentPage: Int) {
+        this.currentPage = currentPage
         searchEmitter.onNext(searchQuery)
     }
 
-    private fun searchForImages(query: String): Observable<Response>? {
+    private fun searchForImages(query: String): Observable<Response> {
         return imageRepository.getImagePosts(currentPage, query).toObservable()
     }
 

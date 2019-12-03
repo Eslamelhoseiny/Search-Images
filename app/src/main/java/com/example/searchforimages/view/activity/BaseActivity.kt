@@ -1,10 +1,12 @@
-package com.example.searchforimages.view
+package com.example.searchforimages.view.activity
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 
+@SuppressLint("Registered")
 open class BaseActivity : AppCompatActivity() {
 
     private lateinit var compositeDisposable: CompositeDisposable
