@@ -78,7 +78,6 @@ class ViewModelSearchActivity : ViewModel() {
         items?.let {
             if (adapter.getImagesList().isNullOrEmpty()) {
                 adapter.setImages(it)
-
             } else {
                 adapter.addImages(it)
             }
